@@ -7,14 +7,18 @@ const Dashboard = () => {
   const [content, setContent] = useState("");
   const [posts, setPosts] = useState([]);
 
-  // ✅ Use environment variable
+  // ✅ Use environment variable for API base URL
   const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // Fetch posts
   useEffect(() => {
-    axios.get(`${API}/api/users`).then((res) => {
-      setPosts(res.data);
-    });
+    axios.get(`${API}/api/posts`)
+      .then((res) => {
+        setPosts(res.data);
+      })
+      .catch((err) => {
+        console.error("❌ Error fetching posts:", err);
+      });
   }, [API]);
 
   // Handle new post
@@ -22,13 +26,17 @@ const Dashboard = () => {
     e.preventDefault();
     if (!content.trim()) return;
 
-    const res = await axios.post(`${API}/api/users`, {
-      username: user.username,
-      content,
-    });
+    try {
+      const res = await axios.post(`${API}/api/posts`, {
+        username: user.username,
+        content,
+      });
 
-    setPosts([res.data, ...posts]);
-    setContent("");
+      setPosts([res.data, ...posts]);
+      setContent("");
+    } catch (err) {
+      console.error("❌ Error creating post:", err);
+    }
   };
 
   return (
@@ -74,7 +82,7 @@ const Dashboard = () => {
           ) : (
             posts.map((post) => (
               <div
-                key={post.id}
+                key={post._id || post.id} // ✅ MongoDB uses _id
                 className="bg-white shadow-md rounded-xl p-4"
               >
                 <h3 className="font-semibold text-purple-600">
