@@ -1,46 +1,33 @@
 import express from "express";
-import mongoose from "mongoose";
-
 const router = express.Router();
 
-// Define schema
-const postSchema = new mongoose.Schema(
-  {
-    username: { type: String, required: true },
-    content: { type: String, required: true },
-  },
-  { timestamps: true }
-);
+// In-memory posts (temporary, will reset when server restarts)
+let posts = [];
 
-// Create model
-const Post = mongoose.model("Post", postSchema);
-
-// ✅ Create a new post
-router.post("/", async (req, res) => {
+// Create a new post
+router.post("/", (req, res) => {
   try {
     const { username, content } = req.body;
-
     if (!username || !content) {
       return res.status(400).json({ error: "Username and content required" });
     }
 
-    const newPost = new Post({ username, content });
-    await newPost.save();
+    const newPost = { id: Date.now(), username, content };
+    posts.unshift(newPost); // add new post at top
 
     res.json(newPost);
-  } catch (err) {
-    console.error("❌ Error creating post:", err);
+  } catch (error) {
+    console.error("❌ Error creating post:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// ✅ Get all posts
-router.get("/", async (req, res) => {
+// Get all posts
+router.get("/", (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 }); // latest first
     res.json(posts);
-  } catch (err) {
-    console.error("❌ Error fetching posts:", err);
+  } catch (error) {
+    console.error("❌ Error fetching posts:", error.message);
     res.status(500).json({ error: "Server error" });
   }
 });
